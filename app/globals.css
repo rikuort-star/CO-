@@ -401,3 +401,13 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .rk-table td:first-child { text-align: left; font-family: var(--font-body), sans-serif; color: var(--muted); }
 .rk-table tr.rep td { font-weight: 700; background: #f1faf8; }
 .rk-error { color: var(--bad); font-size: 12.5px; margin-top: 6px; line-height: 1.5; }
+
+/* ---- 症例選択カード ---- */
+.case-pick { align-items: center; gap: 12px; }
+.case-no {
+  flex: none; background: var(--teal); color: #fff; font-weight: 700;
+  font-size: 12.5px; padding: 6px 10px; border-radius: 10px; white-space: nowrap;
+}
+.case-meta { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.case-name { font-weight: 700; font-size: 14.5px; color: var(--ink); }
+.case-title { font-size: 12.5px; color: var(--muted); }

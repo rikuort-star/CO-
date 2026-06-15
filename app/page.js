@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import PatientAvatar from "../components/PatientAvatar";
 import ImageSlot from "../components/ImageSlot";
-import { CASE } from "../lib/case.js";
+import { CASES } from "../lib/cases.js";
 
 const STAGES = [
   { key: "interview", label: "問診" },
@@ -13,10 +13,8 @@ const STAGES = [
   { key: "result", label: "結果" },
 ];
 
-const TOTAL_ITEMS = CASE.requiredItems.length;
-
-function emotionFor(count, empathyTouched) {
-  const ratio = count / TOTAL_ITEMS;
+function emotionFor(count, total, empathyTouched) {
+  const ratio = total ? count / total : 0;
   if (ratio >= 0.85) return "happy";
   if (ratio >= 0.5) return "relieved";
   if (ratio >= 0.25 || empathyTouched) return "neutral";
@@ -24,11 +22,11 @@ function emotionFor(count, empathyTouched) {
 }
 
 // マイク/テキストの自由入力を、質問バンクの中から一番近い質問に当てはめる
-function matchQuestion(text) {
+function matchQuestion(text, bank) {
   const t = (text || "").toLowerCase().replace(/\s/g, "");
   let best = null;
   let bestScore = 0;
-  for (const item of CASE.questionBank) {
+  for (const item of (bank || [])) {
     let score = 0;
     for (const kw of item.keywords) {
       if (t.includes(kw.toLowerCase())) score += 1;
@@ -39,10 +37,11 @@ function matchQuestion(text) {
 }
 
 export default function Page() {
-  const [stage, setStage] = useState("intro");
+  const [caseIdx, setCaseIdx] = useState(null);
+  const [stage, setStage] = useState("select");
   const [history, setHistory] = useState([]); // {role:'me'|'pt', content}
   const [emotion, setEmotion] = useState("anxious");
-  const [bubble, setBubble] = useState(CASE.patient.chiefComplaint);
+  const [bubble, setBubble] = useState("");
   const [askedIds, setAskedIds] = useState([]);
   const [elicited, setElicited] = useState([]);
   const [empathyTouched, setEmpathyTouched] = useState(false);
@@ -63,6 +62,8 @@ export default function Page() {
   const logBoxRef = useRef(null);
   const taRef = useRef(null);
   const composingRef = useRef(false);
+  const CASE = CASES[caseIdx ?? 0];
+  const TOTAL_ITEMS = CASE.requiredItems.length;
   const correctDx = CASE.diagnoses.find((d) => d.correct);
 
   useEffect(() => { const el = logBoxRef.current; if (el) el.scrollTop = el.scrollHeight; }, [history]);
@@ -100,14 +101,14 @@ export default function Page() {
     setHistory((h) => [...h, { role: "me", content: shown }, { role: "pt", content: item.answer }]);
     setBubble(item.answer);
     clearInput();
-    setEmotion(emotionFor(nextElicited.length, nextEmpathy));
+    setEmotion(emotionFor(nextElicited.length, TOTAL_ITEMS, nextEmpathy));
     speak(item.answer);
   }
 
   function submitFreeText() {
     const text = input.trim();
     if (!text) return;
-    const m = matchQuestion(text);
+    const m = matchQuestion(text, CASE.questionBank);
     clearInput();
     if (!m) {
       setToast("うまく聞き取れませんでした。別の言い方で試してみてください。");
@@ -129,7 +130,7 @@ export default function Page() {
       for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
       setInput(t);
       if (e.results[e.results.length - 1].isFinal) {
-        const m = matchQuestion(t);
+        const m = matchQuestion(t, CASE.questionBank);
         clearInput();
         if (m) ask(m, t);
         else { setToast("うまく聞き取れませんでした。別の言い方で試してみてください。"); setTimeout(() => setToast(""), 3500); }
@@ -155,17 +156,38 @@ export default function Page() {
     setTimeout(() => speak(CASE.patient.chiefComplaint), 250);
   }
 
-  function restart() {
-    setStage("intro"); setHistory([]); setEmotion("anxious");
-    setBubble(CASE.patient.chiefComplaint); setAskedIds([]); setElicited([]);
+  function resetProgress() {
+    setHistory([]); setEmotion("anxious"); setAskedIds([]); setElicited([]);
     setEmpathyTouched(false); setInput(""); setPredictId(null);
     setSelectedTests([]); setDiagnoseId(null);
     setExamVisited(false); setShowChief(false); setShowExam(false);
   }
 
+  function selectCase(i) {
+    if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+    setCaseIdx(i);
+    resetProgress();
+    setBubble(CASES[i].patient.chiefComplaint);
+    setStage("intro");
+  }
+
+  function backToSelect() {
+    if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+    setCaseIdx(null);
+    resetProgress();
+    setBubble("");
+    setStage("select");
+  }
+
+  function restart() {
+    setStage("intro");
+    resetProgress();
+    setBubble(CASE.patient.chiefComplaint);
+  }
+
   function goBack() {
     if (typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
-    if (stage === "intro") return;
+    if (stage === "intro" || stage === "select") return;
     const idx = STAGES.findIndex((s) => s.key === stage);
     if (idx <= 0) setStage("intro");
     else setStage(STAGES[idx - 1].key);
@@ -309,15 +331,15 @@ export default function Page() {
   return (
     <main className="app">
       <div className="topbar">
-        {stage !== "intro" && (
+        {stage !== "intro" && stage !== "select" && (
           <div className="nav">
             <button className="navbtn" onClick={goBack}>← 戻る</button>
-            <button className="navbtn" onClick={restart}>🏠 最初へ</button>
+            <button className="navbtn" onClick={backToSelect}>🏠 症例選択</button>
           </div>
         )}
         <h1 className="rounded">👁 問診トレーニング</h1>
         <p>視能訓練士のための・患者と話して学ぶ臨床推論</p>
-        {stage !== "intro" && (
+        {stage !== "intro" && stage !== "select" && (
           <div className="stages">
             {STAGES.map((s, i) => (
               <span key={s.key} className={`stage-dot ${s.key === stage ? "active" : i < stageIndex ? "done" : ""}`}>
@@ -328,13 +350,32 @@ export default function Page() {
         )}
       </div>
 
+      {/* ---------- 症例選択 ---------- */}
+      {stage === "select" && (
+        <div className="card">
+          <h2 className="rounded">症例を選んでください</h2>
+          <p className="muted" style={{ marginBottom: 12 }}>練習したい症例を選びます。流れはどの症例も同じです。</p>
+          <div className="options">
+            {CASES.map((c, i) => (
+              <button key={c.id} className="opt case-pick" onClick={() => selectCase(i)}>
+                <span className="case-no rounded">症例{i + 1}</span>
+                <span className="case-meta">
+                  <span className="case-name">{c.patient.name}（{c.patient.age}歳・{c.patient.sex}）</span>
+                  <span className="case-title">{c.title}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ---------- INTRO ---------- */}
       {stage === "intro" && (
         <div className="card">
           <div className="scene" style={{ marginBottom: 16 }}>
             {CASE.patient.image
               ? <ImageSlot src={CASE.patient.image} label="患者" />
-              : <div className="avatar-wrap"><PatientAvatar emotion="anxious" size={170} /></div>}
+              : <div className="avatar-wrap"><PatientAvatar emotion="anxious" size={170} variant={CASE.patient.avatar} /></div>}
             <span className="patient-name rounded">{CASE.patient.name}</span>
             <div className="bubble">{CASE.patient.chiefComplaint}</div>
           </div>
@@ -356,6 +397,7 @@ export default function Page() {
           </p>
           <p className="hint" style={{ marginTop: 10 }}>※鑑別を考える臨床推論の練習です（確定診断は医師が行います）</p>
           <button className="btn primary block" style={{ marginTop: 14 }} onClick={startInterview}>問診をはじめる</button>
+          <button className="btn ghost block" style={{ marginTop: 10 }} onClick={backToSelect}>← 症例選択へ戻る</button>
         </div>
       )}
 
@@ -366,7 +408,7 @@ export default function Page() {
           <div className="scene">
             {CASE.patient.image
               ? <ImageSlot src={CASE.patient.image} label="患者" />
-              : <div className="avatar-wrap"><PatientAvatar emotion={emotion} size={150} /></div>}
+              : <div className="avatar-wrap"><PatientAvatar emotion={emotion} size={150} variant={CASE.patient.avatar} /></div>}
             <span className="patient-name rounded">{CASE.patient.name}</span>
             <div className="bubble">{bubble}</div>
             {!CASE.hideQuestionButtons && (
