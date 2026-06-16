@@ -205,7 +205,9 @@ export default function Page() {
     if (missedItems.length === 0) a.push("必要な問診を網羅できています。この調子で、緊急度の判断（医師への報告）まで意識しましょう。");
     else {
       missedItems.slice(0, 2).forEach((m) => a.push(`次は「${m.label}」も忘れずに。${m.why}`));
-      if (missedItems.length > 2) a.push("レッドフラッグ（飛蚊症の急増・光視症・視野欠損）は毎回ルーティンで確認する習慣を。");
+    }
+    if (CASE.redFlags && CASE.redFlags.length > 0) {
+      a.push(`見逃すと危険なサイン（＝重い病気を見落とさないための“危険信号”。「レッドフラッグ」とも呼びます）として、${CASE.redFlags.join("・")}は毎回必ず確認しましょう。`);
     }
     if (!empathyTouched) a.push("不安をねぎらう一言があると、患者さんは話しやすくなります。");
     return a;
@@ -596,12 +598,12 @@ export default function Page() {
                   <div key={t.id} style={{ marginBottom: 12 }}>
                     <b className="rounded">{t.name}</b><span className="muted">（推奨）</span>
                     {t.resultNote && <p className="muted" style={{ marginTop: 4 }}>{t.resultNote}</p>}
-                    {t.image !== undefined && (
-                      <div style={{ marginTop: 8 }}>
-                        <ImageSlot src={t.image} label={`${t.name}の結果画像`}
-                          hint="public/images に置いて case.js の該当テストの image に指定" />
+                    {t.showInResult && t.images && t.images.map((im, i) => (
+                      <div key={i} style={{ marginTop: 8 }}>
+                        <ImageSlot src={im.src} label={im.label}
+                          hint="public/images に置いて case.js の該当テストの images に指定" />
                       </div>
-                    )}
+                    ))}
                   </div>
                 ))}
 
