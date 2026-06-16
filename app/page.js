@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Fragment } from "react";
 import PatientAvatar from "../components/PatientAvatar";
 import ImageSlot from "../components/ImageSlot";
 import { CASES } from "../lib/cases.js";
@@ -73,6 +73,7 @@ export default function Page() {
 
   useEffect(() => { const el = logBoxRef.current; if (el) el.scrollTop = el.scrollHeight; }, [history]);
   useEffect(() => { if (stage === "exam") setExamVisited(true); }, [stage]);
+  useEffect(() => { if (typeof window !== "undefined") window.scrollTo(0, 0); }, [stage]);
 
   function clearInput() {
     setInput("");
@@ -316,15 +317,15 @@ export default function Page() {
         <tbody>
           {CASE.examResults.map((r, i) => (
             r.image ? (
-              <tr key={i}>
-                <td colSpan={2}>
-                  <div style={{ padding: "6px 0" }}>
-                    <div className="rounded" style={{ fontWeight: 700, marginBottom: 6 }}>{r.name}</div>
+              <Fragment key={i}>
+                <tr><td>{r.name}</td><td></td></tr>
+                <tr>
+                  <td colSpan={2} style={{ paddingTop: 4, paddingBottom: 8 }}>
                     <ImageSlot src={r.image} label={r.name}
                       hint="public/images に置いて case.js の examResults に指定" />
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              </Fragment>
             ) : (
               <tr key={i}>
                 <td>{r.name}</td>
