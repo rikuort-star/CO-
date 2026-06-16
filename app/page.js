@@ -22,6 +22,11 @@ function emotionFor(count, total, empathyTouched) {
 }
 
 // マイク/テキストの自由入力を、質問バンクの中から一番近い質問に当てはめる
+function looksEmpathetic(text) {
+  // 「〜んですね」「〜ですよね」など、質問ではなく共感・相づちの言い回し
+  return /んですね|のですね|ですよね|でしょうね|ますよね|そうなんですね/.test(text || "");
+}
+
 function matchQuestion(text, bank) {
   const t = (text || "").toLowerCase().replace(/\s/g, "");
   let best = null;
@@ -108,7 +113,11 @@ export default function Page() {
   function submitFreeText() {
     const text = input.trim();
     if (!text) return;
-    const m = matchQuestion(text, CASE.questionBank);
+    let m = matchQuestion(text, CASE.questionBank);
+    if (looksEmpathetic(text)) {
+      const emp = CASE.questionBank.find((q) => q.empathy);
+      if (emp) m = emp;
+    }
     clearInput();
     if (!m) {
       setToast("うまく聞き取れませんでした。別の言い方で試してみてください。");
@@ -130,7 +139,11 @@ export default function Page() {
       for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
       setInput(t);
       if (e.results[e.results.length - 1].isFinal) {
-        const m = matchQuestion(t, CASE.questionBank);
+        let m = matchQuestion(t, CASE.questionBank);
+        if (looksEmpathetic(t)) {
+          const emp = CASE.questionBank.find((q) => q.empathy);
+          if (emp) m = emp;
+        }
         clearInput();
         if (m) ask(m, t);
         else { setToast("うまく聞き取れませんでした。別の言い方で試してみてください。"); setTimeout(() => setToast(""), 3500); }
@@ -302,10 +315,22 @@ export default function Page() {
       <table className="exam">
         <tbody>
           {CASE.examResults.map((r, i) => (
-            <tr key={i}>
-              <td>{r.name}</td>
-              <td className={r.flag === "abnormal" ? "flag-abn" : "flag-norm"}>{r.value}</td>
-            </tr>
+            r.image ? (
+              <tr key={i}>
+                <td colSpan={2}>
+                  <div style={{ padding: "6px 0" }}>
+                    <div className="rounded" style={{ fontWeight: 700, marginBottom: 6 }}>{r.name}</div>
+                    <ImageSlot src={r.image} label={r.name}
+                      hint="public/images に置いて case.js の examResults に指定" />
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              <tr key={i}>
+                <td>{r.name}</td>
+                <td className={r.flag === "abnormal" ? "flag-abn" : "flag-norm"}>{r.value}</td>
+              </tr>
+            )
           ))}
         </tbody>
       </table>
