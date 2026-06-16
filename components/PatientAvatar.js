@@ -4,7 +4,8 @@
 // emotion: "anxious" | "neutral" | "relieved" | "happy"
 // variant: "young"（標準）| "elder"（白髪の高齢者）
 export default function PatientAvatar({ emotion = "anxious", size = 200, variant = "young" }) {
-  const isElder = variant === "elder";
+  const isElder = variant === "elder" || variant === "elder_female";
+  const isElderF = variant === "elder_female";
   const hair = isElder ? "#e6e6e6" : "#4a3f36";
   const hairShade = isElder ? "#cfcfcf" : "#5a4d42";
   const brow = isElder ? "#b7b1a8" : "#6b5a4a";
@@ -83,8 +84,15 @@ export default function PatientAvatar({ emotion = "anxious", size = 200, variant
     >
       {/* 頭・顔の輪郭 */}
       <circle cx="100" cy="105" r="78" fill={skin} stroke={skinStroke} strokeWidth="3" />
-      {/* 髪（標準＝短髪／高齢＝白髪・やや後退） */}
-      {isElder ? (
+      {/* 髪（標準＝短髪／高齢男性＝白髪後退／高齢女性＝白髪ふんわり） */}
+      {isElderF ? (
+        <>
+          <path d="M22 108 q-2 -76 78 -76 q80 0 78 76 q-10 -30 -30 -40 q4 12 0 22 q-14 -22 -34 -24 q4 10 -2 18 q-12 -14 -26 -14 q-14 0 -26 14 q-6 -8 -2 -18 q-20 2 -34 24 q-4 -10 0 -22 q-20 10 -30 40Z" fill={hair} stroke="#d6d6d6" strokeWidth="1.5" />
+          <path d="M100 38 q-26 4 -36 24 q20 -12 38 -11 q-2 -7 -2 -13Z" fill={hairShade} opacity="0.4" />
+          <path d="M70 122 q-6 14 -2 24" stroke="#e3bd9b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.6" />
+          <path d="M130 122 q6 14 2 24" stroke="#e3bd9b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.6" />
+        </>
+      ) : isElder ? (
         <>
           <path d="M34 92 q4 -50 66 -52 q62 2 66 52 q-16 -22 -40 -24 q4 8 2 14 q-12 -12 -28 -12 q-16 0 -28 12 q-2 -6 2 -14 q-24 2 -40 24Z" fill={hair} stroke="#d2d2d2" strokeWidth="1.5" />
           <path d="M100 40 q-22 4 -30 22 q18 -10 34 -10 q-2 -7 -4 -12Z" fill={hairShade} opacity="0.5" />
