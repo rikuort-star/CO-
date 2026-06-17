@@ -248,12 +248,23 @@ export default function Page() {
 
   // ---- 再利用パーツ：主訴パネル / 検査結果パネル / 表示切替バー ----
   const chiefPanelJSX = (
-    <div className="review-panel">
-      <div className="chief-line">「{CASE.patient.chiefComplaint}」</div>
+    <div className="chart-card">
+      <div className="chart-head">📋 カルテ（問診時の情報）</div>
+      <div className="chart-rows">
+        <div className="chart-row"><span className="chart-k">氏名</span><span className="chart-v">{CASE.patient.name}</span></div>
+        <div className="chart-row"><span className="chart-k">年齢 / 性別</span><span className="chart-v">{CASE.patient.age}歳 / {CASE.patient.sex}</span></div>
+        {CASE.patient.job && (
+          <div className="chart-row"><span className="chart-k">職業</span><span className="chart-v">{CASE.patient.job}</span></div>
+        )}
+        <div className="chart-row chart-row-chief"><span className="chart-k">主訴</span><span className="chart-v">「{CASE.patient.chiefComplaint}」</span></div>
+      </div>
       {CASE.patient.presentingHistory && CASE.patient.presentingHistory.length > 0 && (
-        <ul className="history-list" style={{ marginTop: 8 }}>
-          {CASE.patient.presentingHistory.map((h, i) => <li key={i}>{h}</li>)}
-        </ul>
+        <div className="chart-note">
+          <div className="chart-note-title">来院時の情報</div>
+          <ul className="history-list">
+            {CASE.patient.presentingHistory.map((h, i) => <li key={i}>{h}</li>)}
+          </ul>
+        </div>
       )}
     </div>
   );
@@ -296,7 +307,8 @@ export default function Page() {
   }
 
   const examBodyJSX = (
-    <>
+    <div className="chart-card">
+      <div className="chart-head">🔬 精密検査結果</div>
       {CASE.refkera && (
         <div className="refkera">
           <div className="refkera-title">レフ・ケラト値</div>
@@ -305,7 +317,7 @@ export default function Page() {
         </div>
       )}
       {examImages.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, margin: "12px 0" }}>
           {examImages.map((im, i) => (
             <ImageSlot key={i} src={im.src} label={im.label}
               hint="public/images に置いて case.js の examImages に指定" />
@@ -313,37 +325,32 @@ export default function Page() {
         </div>
       )}
       {CASE.visionTable && CASE.visionTable.length > 0 && (
-        <div className="vision">
-          <div className="vision-title rounded">視力</div>
+        <div className="chart-rows">
+          <div className="chart-sub">視力</div>
           {CASE.visionTable.map((v, i) => (
-            <div className="vision-row" key={i}>
-              <span className="vision-eye">{v.eye}</span>
-              <span className="vision-val">{v.value}</span>
-              {v.note && <span className="vision-note">{v.note}</span>}
+            <div className="chart-row" key={i}>
+              <span className="chart-k">{v.eye}</span>
+              <span className="chart-v mono">{v.value}{v.note ? ` ${v.note}` : ""}</span>
             </div>
           ))}
         </div>
       )}
-      <table className="exam">
-        <tbody>
-          {CASE.examResults.map((r, i) => (
-            r.image ? (
-              <tr key={i}>
-                <td colSpan={2} style={{ paddingTop: 4, paddingBottom: 8 }}>
-                  <ImageSlot src={r.image} label={r.name}
-                    hint="public/images に置いて case.js の examResults に指定" />
-                </td>
-              </tr>
-            ) : (
-              <tr key={i}>
-                <td>{r.name}</td>
-                <td className={r.flag === "abnormal" ? "flag-abn" : "flag-norm"}>{r.value}</td>
-              </tr>
-            )
-          ))}
-        </tbody>
-      </table>
-    </>
+      <div className="chart-rows">
+        {CASE.examResults.map((r, i) => (
+          r.image ? (
+            <div className="chart-row-img" key={i}>
+              <ImageSlot src={r.image} label={r.name}
+                hint="public/images に置いて case.js の examResults に指定" />
+            </div>
+          ) : (
+            <div className="chart-row" key={i}>
+              <span className="chart-k">{r.name}</span>
+              <span className={`chart-v ${r.flag === "abnormal" ? "flag-abn" : ""}`}>{r.value}</span>
+            </div>
+          )
+        ))}
+      </div>
+    </div>
   );
 
   // 主訴／検査結果を、どの画面からでも開閉できる表示切替セクション
@@ -568,10 +575,15 @@ export default function Page() {
                   <div className="test-result">
                     {t.images.map((im, i) => (
                       <div key={i} style={{ margin: "8px 0" }}>
-                        <ImageSlot src={im.src} label={im.label}
+                        <ImageSlot src={im.src} label={im.label} uniform
                           hint="public/images に置いて case.js の該当テストの images に指定" />
                       </div>
                     ))}
+                  </div>
+                )}
+                {selectedTests.includes(t.id) && t.recommended && !t.images && t.resultNote && (
+                  <div className="test-result">
+                    <p className="muted" style={{ margin: 0 }}>{t.resultNote}</p>
                   </div>
                 )}
               </div>
@@ -634,7 +646,7 @@ export default function Page() {
                     {t.resultNote && <p className="muted" style={{ marginTop: 4 }}>{t.resultNote}</p>}
                     {t.showInResult && t.images && t.images.map((im, i) => (
                       <div key={i} style={{ marginTop: 8 }}>
-                        <ImageSlot src={im.src} label={im.label}
+                        <ImageSlot src={im.src} label={im.label} uniform
                           hint="public/images に置いて case.js の該当テストの images に指定" />
                       </div>
                     ))}

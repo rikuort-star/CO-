@@ -8,9 +8,10 @@ export default function PatientAvatar({ emotion = "anxious", size = 200, variant
   const isElderF = variant === "elder_female";
   const isSharp = variant === "sharp_male";
   const isPurpleF = variant === "purple_female";
-  const hair = isElder ? "#e6e6e6" : isSharp ? "#15130f" : isPurpleF ? "#9b72c4" : "#4a3f36";
-  const hairShade = isElder ? "#cfcfcf" : isSharp ? "#2a2620" : isPurpleF ? "#7d57a8" : "#5a4d42";
-  const brow = isElder ? "#b7b1a8" : isSharp ? "#171410" : isPurpleF ? "#8a6bb0" : "#6b5a4a";
+  const isBlondeF = variant === "blonde_female";
+  const hair = isElder ? "#e6e6e6" : isSharp ? "#15130f" : isPurpleF ? "#9b72c4" : isBlondeF ? "#e8c66a" : "#4a3f36";
+  const hairShade = isElder ? "#cfcfcf" : isSharp ? "#2a2620" : isPurpleF ? "#7d57a8" : isBlondeF ? "#d4ad4a" : "#5a4d42";
+  const brow = isElder ? "#b7b1a8" : isSharp ? "#171410" : isPurpleF ? "#8a6bb0" : isBlondeF ? "#c2a24e" : "#6b5a4a";
   const skin = isElder ? "#f4dabf" : "#ffe1c4";
   const skinStroke = isElder ? "#e2bf9f" : "#f0c9a4";
 
@@ -97,12 +98,12 @@ export default function PatientAvatar({ emotion = "anxious", size = 200, variant
           <path d="M48 58 q-13 18 -11 42 q9 -17 19 -25 q-6 -9 -8 -17Z" fill={hairShade} opacity="0.55" />
           <path d="M152 58 q13 18 11 42 q-9 -17 -19 -25 q6 -9 8 -17Z" fill={hairShade} opacity="0.55" />
         </>
-      ) : (isElderF || isPurpleF) ? (
+      ) : (isElderF || isPurpleF || isBlondeF) ? (
         <>
-          <path d="M22 108 q-2 -76 78 -76 q80 0 78 76 q-10 -30 -30 -40 q4 12 0 22 q-14 -22 -34 -24 q4 10 -2 18 q-12 -14 -26 -14 q-14 0 -26 14 q-6 -8 -2 -18 q-20 2 -34 24 q-4 -10 0 -22 q-20 10 -30 40Z" fill={hair} stroke={isPurpleF ? "#7d57a8" : "#d6d6d6"} strokeWidth="1.5" />
+          <path d="M22 108 q-2 -76 78 -76 q80 0 78 76 q-10 -30 -30 -40 q4 12 0 22 q-14 -22 -34 -24 q4 10 -2 18 q-12 -14 -26 -14 q-14 0 -26 14 q-6 -8 -2 -18 q-20 2 -34 24 q-4 -10 0 -22 q-20 10 -30 40Z" fill={hair} stroke={isPurpleF ? "#7d57a8" : isBlondeF ? "#d4ad4a" : "#d6d6d6"} strokeWidth="1.5" />
           <path d="M100 38 q-26 4 -36 24 q20 -12 38 -11 q-2 -7 -2 -13Z" fill={hairShade} opacity="0.4" />
-          <path d="M70 122 q-6 14 -2 24" stroke="#e3bd9b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.6" />
-          <path d="M130 122 q6 14 2 24" stroke="#e3bd9b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.6" />
+          <path d="M70 122 q-6 14 -2 24" stroke="#e3bd9b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity={isBlondeF ? 0 : 0.6} />
+          <path d="M130 122 q6 14 2 24" stroke="#e3bd9b" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity={isBlondeF ? 0 : 0.6} />
         </>
       ) : isElder ? (
         <>
