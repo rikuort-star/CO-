@@ -67,6 +67,7 @@ export default function Page() {
   const logBoxRef = useRef(null);
   const taRef = useRef(null);
   const composingRef = useRef(false);
+  const fbRef = useRef(0);
   const CASE = CASES[caseIdx ?? 0];
   const TOTAL_ITEMS = CASE.requiredItems.length;
   const correctDx = CASE.diagnoses.find((d) => d.correct);
@@ -83,7 +84,9 @@ export default function Page() {
   function speak(text) {
     if (muted || typeof window === "undefined" || !window.speechSynthesis) return;
     try {
-      const u = new SpeechSynthesisUtterance(text);
+      // 「〜の方（ほう）」を「かた」と読み上げないよう、読み上げ用テキストだけ補正（画面表示は元のまま）
+      const sayText = (text || "").replace(/の方/g, "のほう");
+      const u = new SpeechSynthesisUtterance(sayText);
       u.lang = "ja-JP"; u.rate = 1.0; u.pitch = 1.05;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
@@ -111,6 +114,18 @@ export default function Page() {
     speak(item.answer);
   }
 
+  function askFallback(userText) {
+    const fbs = (CASE.fallbacks && CASE.fallbacks.length)
+      ? CASE.fallbacks
+      : ["うーん…すみません、もう一度うかがってもいいですか？"];
+    const line = fbs[fbRef.current % fbs.length];
+    fbRef.current += 1;
+    const shown = (userText && userText.trim()) ? userText.trim() : "";
+    setHistory((h) => [...h, { role: "me", content: shown }, { role: "pt", content: line }]);
+    setBubble(line);
+    speak(line);
+  }
+
   function submitFreeText() {
     const text = input.trim();
     if (!text) return;
@@ -120,11 +135,7 @@ export default function Page() {
       if (emp) m = emp;
     }
     clearInput();
-    if (!m) {
-      setToast("うまく聞き取れませんでした。別の言い方で試してみてください。");
-      setTimeout(() => setToast(""), 3500);
-      return;
-    }
+    if (!m) { askFallback(text); return; }
     ask(m, text);
   }
 
@@ -147,7 +158,7 @@ export default function Page() {
         }
         clearInput();
         if (m) ask(m, t);
-        else { setToast("うまく聞き取れませんでした。別の言い方で試してみてください。"); setTimeout(() => setToast(""), 3500); }
+        else askFallback(t);
       }
     };
     r.onend = () => setListening(false);

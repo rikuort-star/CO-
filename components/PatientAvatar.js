@@ -88,10 +88,13 @@ export default function PatientAvatar({ emotion = "anxious", size = 200, variant
       {/* 髪（標準＝短髪／高齢男性＝白髪後退／高齢女性＝白髪ふんわり／鋭い男性＝黒髪センター分け） */}
       {isSharp ? (
         <>
-          <path d="M28 96 q2 -62 72 -64 q70 2 72 64 q-8 -28 -28 -38 q-4 16 -16 22 q-2 -8 0 -16 q-12 16 -28 18 q-16 -2 -28 -18 q2 8 0 16 q-12 -6 -16 -22 q-20 10 -28 38Z" fill={hair} />
-          <path d="M100 34 q-7 18 -7 34 q7 -12 7 -12 q0 0 7 12 q0 -16 -7 -34Z" fill="#000" opacity="0.5" />
-          <path d="M100 36 q-24 4 -36 24 q18 -10 34 -12Z" fill={hairShade} opacity="0.7" />
-          <path d="M100 36 q24 4 36 24 q-18 -10 -34 -12Z" fill={hairShade} opacity="0.7" />
+          {/* 黒髪・ウェーブ（ボリューム、センター分け） */}
+          <path d="M22 104 q-6 -56 28 -74 q18 -12 50 -12 q32 0 50 12 q34 18 28 74 q-7 -19 -21 -27 q5 12 -1 21 q-11 -18 -27 -22 q4 9 -1 18 q-12 -14 -28 -14 q-16 0 -28 14 q-5 -9 -1 -18 q-16 4 -27 22 q-6 -9 -1 -21 q-14 8 -21 27Z" fill={hair} />
+          {/* センター分けの分け目 */}
+          <path d="M100 30 q-6 17 -7 33 q7 -11 7 -11 q0 0 7 11 q-1 -16 -7 -33Z" fill="#000" opacity="0.45" />
+          {/* 横に流れるウェーブ */}
+          <path d="M48 58 q-13 18 -11 42 q9 -17 19 -25 q-6 -9 -8 -17Z" fill={hairShade} opacity="0.55" />
+          <path d="M152 58 q13 18 11 42 q-9 -17 -19 -25 q6 -9 8 -17Z" fill={hairShade} opacity="0.55" />
         </>
       ) : isElderF ? (
         <>
@@ -115,10 +118,29 @@ export default function PatientAvatar({ emotion = "anxious", size = 200, variant
         </>
       )}
       {/* ほっぺ */}
-      <circle cx="58" cy="120" r="12" fill="#ff9a8b" opacity={f.blush} />
-      <circle cx="142" cy="120" r="12" fill="#ff9a8b" opacity={f.blush} />
-      {f.brow}
-      {f.eyes}
+      <circle cx="58" cy="120" r="12" fill="#ff9a8b" opacity={isSharp ? 0 : f.blush} />
+      <circle cx="142" cy="120" r="12" fill="#ff9a8b" opacity={isSharp ? 0 : f.blush} />
+      {isSharp ? (
+        <>
+          {/* 鋭い眉 */}
+          <path d="M58 82 L86 76" stroke={brow} strokeWidth="5.5" strokeLinecap="round" />
+          <path d="M142 82 L114 76" stroke={brow} strokeWidth="5.5" strokeLinecap="round" />
+          {/* 鋭い吊り目（クリムゾン） */}
+          <ellipse cx="76" cy="98" rx="6.5" ry="7.5" fill="#a01b1b" />
+          <ellipse cx="124" cy="98" rx="6.5" ry="7.5" fill="#a01b1b" />
+          <circle cx="76" cy="98" r="2.6" fill="#2a0a0a" />
+          <circle cx="124" cy="98" r="2.6" fill="#2a0a0a" />
+          <circle cx="74" cy="95" r="1.6" fill="#fff" />
+          <circle cx="122" cy="95" r="1.6" fill="#fff" />
+          <path d="M58 93 q17 -9 33 -1" stroke="#241a15" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+          <path d="M142 93 q-17 -9 -33 -1" stroke="#241a15" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+        </>
+      ) : (
+        <>
+          {f.brow}
+          {f.eyes}
+        </>
+      )}
       {f.mouth}
       {f.sweat}
     </svg>
