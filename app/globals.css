@@ -294,6 +294,14 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 
 /* ---- image slots ---- */
+.slot-fig { margin: 0; }
+.slot-cap {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #3a3a3a);
+  text-align: left;
+  margin: 0 0 5px 2px;
+}
 .slot-img {
   width: 100%;
   max-height: 260px;

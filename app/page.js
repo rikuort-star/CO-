@@ -328,15 +328,12 @@ export default function Page() {
         <tbody>
           {CASE.examResults.map((r, i) => (
             r.image ? (
-              <Fragment key={i}>
-                <tr><td>{r.name}</td><td></td></tr>
-                <tr>
-                  <td colSpan={2} style={{ paddingTop: 4, paddingBottom: 8 }}>
-                    <ImageSlot src={r.image} label={r.name}
-                      hint="public/images に置いて case.js の examResults に指定" />
-                  </td>
-                </tr>
-              </Fragment>
+              <tr key={i}>
+                <td colSpan={2} style={{ paddingTop: 4, paddingBottom: 8 }}>
+                  <ImageSlot src={r.image} label={r.name}
+                    hint="public/images に置いて case.js の examResults に指定" />
+                </td>
+              </tr>
             ) : (
               <tr key={i}>
                 <td>{r.name}</td>
@@ -413,7 +410,7 @@ export default function Page() {
         <div className="card">
           <div className="scene" style={{ marginBottom: 16 }}>
             {CASE.patient.image
-              ? <ImageSlot src={CASE.patient.image} label="患者" />
+              ? <ImageSlot src={CASE.patient.image} label="" />
               : <div className="avatar-wrap"><PatientAvatar emotion="anxious" size={170} variant={CASE.patient.avatar} /></div>}
             <span className="patient-name rounded">{CASE.patient.name}</span>
             <div className="bubble">{CASE.patient.chiefComplaint}</div>
@@ -446,7 +443,7 @@ export default function Page() {
           {reviewSection}
           <div className="scene">
             {CASE.patient.image
-              ? <ImageSlot src={CASE.patient.image} label="患者" />
+              ? <ImageSlot src={CASE.patient.image} label="" />
               : <div className="avatar-wrap"><PatientAvatar emotion={emotion} size={150} variant={CASE.patient.avatar} /></div>}
             <span className="patient-name rounded">{CASE.patient.name}</span>
             <div className="bubble">{bubble}</div>
