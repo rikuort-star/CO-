@@ -74,6 +74,7 @@ export default function Page() {
 
   useEffect(() => { const el = logBoxRef.current; if (el) el.scrollTop = el.scrollHeight; }, [history]);
   useEffect(() => { if (stage === "exam") setExamVisited(true); }, [stage]);
+  useEffect(() => { if (typeof window !== "undefined" && window.speechSynthesis) { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); }; } }, []);
   useEffect(() => { if (typeof window !== "undefined") window.scrollTo(0, 0); }, [stage]);
 
   function clearInput() {
@@ -81,13 +82,34 @@ export default function Page() {
     if (taRef.current) taRef.current.value = "";
   }
 
+  function pickVoice(sex) {
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      const ja = voices.filter((v) => (v.lang || "").toLowerCase().startsWith("ja"));
+      if (ja.length === 0) return null;
+      const male = ["otoya", "ichiro", "keita", "hattori", "kenji", "daichi", "male", "男性", "男"];
+      const female = ["kyoko", "o-ren", "oren", "nanami", "haruka", "ayumi", "sayaka", "mizuki", "female", "女性", "女"];
+      const want = sex === "男性" ? male : female;
+      const avoid = sex === "男性" ? female : male;
+      let v = ja.find((x) => want.some((w) => (x.name || "").toLowerCase().includes(w)));
+      if (!v) v = ja.find((x) => !avoid.some((w) => (x.name || "").toLowerCase().includes(w)));
+      return v || ja[0];
+    } catch { return null; }
+  }
+
   function speak(text) {
     if (muted || typeof window === "undefined" || !window.speechSynthesis) return;
     try {
+      const sex = CASE.patient.sex;
       // 「〜の方（ほう）」を「かた」と読み上げないよう、読み上げ用テキストだけ補正（画面表示は元のまま）
       const sayText = (text || "").replace(/の方/g, "のほう");
       const u = new SpeechSynthesisUtterance(sayText);
-      u.lang = "ja-JP"; u.rate = 1.0; u.pitch = 1.05;
+      u.lang = "ja-JP";
+      const v = pickVoice(sex);
+      if (v) u.voice = v;
+      u.rate = 1.0;
+      // 声が1種類しかない端末でも男女が分かるよう、ピッチでも差をつける
+      u.pitch = sex === "男性" ? 0.85 : 1.15;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch {}
@@ -248,23 +270,12 @@ export default function Page() {
 
   // ---- 再利用パーツ：主訴パネル / 検査結果パネル / 表示切替バー ----
   const chiefPanelJSX = (
-    <div className="chart-card">
-      <div className="chart-head">📋 カルテ（問診時の情報）</div>
-      <div className="chart-rows">
-        <div className="chart-row"><span className="chart-k">氏名</span><span className="chart-v">{CASE.patient.name}</span></div>
-        <div className="chart-row"><span className="chart-k">年齢 / 性別</span><span className="chart-v">{CASE.patient.age}歳 / {CASE.patient.sex}</span></div>
-        {CASE.patient.job && (
-          <div className="chart-row"><span className="chart-k">職業</span><span className="chart-v">{CASE.patient.job}</span></div>
-        )}
-        <div className="chart-row chart-row-chief"><span className="chart-k">主訴</span><span className="chart-v">「{CASE.patient.chiefComplaint}」</span></div>
-      </div>
+    <div className="review-panel">
+      <div className="chief-line">「{CASE.patient.chiefComplaint}」</div>
       {CASE.patient.presentingHistory && CASE.patient.presentingHistory.length > 0 && (
-        <div className="chart-note">
-          <div className="chart-note-title">来院時の情報</div>
-          <ul className="history-list">
-            {CASE.patient.presentingHistory.map((h, i) => <li key={i}>{h}</li>)}
-          </ul>
-        </div>
+        <ul className="history-list" style={{ marginTop: 8 }}>
+          {CASE.patient.presentingHistory.map((h, i) => <li key={i}>{h}</li>)}
+        </ul>
       )}
     </div>
   );
@@ -307,8 +318,7 @@ export default function Page() {
   }
 
   const examBodyJSX = (
-    <div className="chart-card">
-      <div className="chart-head">🔬 精密検査結果</div>
+    <>
       {CASE.refkera && (
         <div className="refkera">
           <div className="refkera-title">レフ・ケラト値</div>
@@ -317,7 +327,7 @@ export default function Page() {
         </div>
       )}
       {examImages.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, margin: "12px 0" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
           {examImages.map((im, i) => (
             <ImageSlot key={i} src={im.src} label={im.label}
               hint="public/images に置いて case.js の examImages に指定" />
@@ -325,32 +335,37 @@ export default function Page() {
         </div>
       )}
       {CASE.visionTable && CASE.visionTable.length > 0 && (
-        <div className="chart-rows">
-          <div className="chart-sub">視力</div>
+        <div className="vision">
+          <div className="vision-title rounded">視力</div>
           {CASE.visionTable.map((v, i) => (
-            <div className="chart-row" key={i}>
-              <span className="chart-k">{v.eye}</span>
-              <span className="chart-v mono">{v.value}{v.note ? ` ${v.note}` : ""}</span>
+            <div className="vision-row" key={i}>
+              <span className="vision-eye">{v.eye}</span>
+              <span className="vision-val">{v.value}</span>
+              {v.note && <span className="vision-note">{v.note}</span>}
             </div>
           ))}
         </div>
       )}
-      <div className="chart-rows">
-        {CASE.examResults.map((r, i) => (
-          r.image ? (
-            <div className="chart-row-img" key={i}>
-              <ImageSlot src={r.image} label={r.name}
-                hint="public/images に置いて case.js の examResults に指定" />
-            </div>
-          ) : (
-            <div className="chart-row" key={i}>
-              <span className="chart-k">{r.name}</span>
-              <span className={`chart-v ${r.flag === "abnormal" ? "flag-abn" : ""}`}>{r.value}</span>
-            </div>
-          )
-        ))}
-      </div>
-    </div>
+      <table className="exam">
+        <tbody>
+          {CASE.examResults.map((r, i) => (
+            r.image ? (
+              <tr key={i}>
+                <td colSpan={2} style={{ paddingTop: 4, paddingBottom: 8 }}>
+                  <ImageSlot src={r.image} label={r.name}
+                    hint="public/images に置いて case.js の examResults に指定" />
+                </td>
+              </tr>
+            ) : (
+              <tr key={i}>
+                <td>{r.name}</td>
+                <td className={r.flag === "abnormal" ? "flag-abn" : "flag-norm"}>{r.value}</td>
+              </tr>
+            )
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 
   // 主訴／検査結果を、どの画面からでも開閉できる表示切替セクション
@@ -447,11 +462,10 @@ export default function Page() {
       {/* ---------- INTERVIEW ---------- */}
       {stage === "interview" && (
         <>
-          {reviewSection}
           <div className="scene">
             {CASE.patient.image
               ? <ImageSlot src={CASE.patient.image} label="" />
-              : <div className="avatar-wrap"><PatientAvatar emotion={emotion} size={150} variant={CASE.patient.avatar} /></div>}
+              : <div className="avatar-wrap"><PatientAvatar emotion={emotion} size={168} variant={CASE.patient.avatar} /></div>}
             <span className="patient-name rounded">{CASE.patient.name}</span>
             <div className="bubble">{bubble}</div>
             {!CASE.hideQuestionButtons && (
@@ -514,6 +528,8 @@ export default function Page() {
                 マイク、または入力欄から、自分で質問を考えて聞いてみましょう（質問の例は表示されません）。あいさつなど簡単な日常会話もできます。
               </p>
             )}
+
+            <div style={{ marginTop: 14 }}>{reviewSection}</div>
 
             <div className="btn-row">
               <button className="btn ghost" onClick={() => setMuted((m) => !m)}>{muted ? "🔇 音声オフ" : "🔊 音声オン"}</button>
